@@ -1,0 +1,194 @@
+# Recommended Next Features
+
+Your basic RAG pipeline is complete:
+
+`PDF → chunks → embeddings → OpenSearch → similarity search → Gemini answer`
+
+The most valuable next improvements are below, roughly in implementation order.
+
+## 1. Source citations
+
+Return the answer together with the retrieved page numbers and source names. This lets users verify the answer.
+
+```json
+{
+  "answer": "Spring AI provides...",
+  "sources": [
+    {
+      "page": 3,
+      "file": "sample.pdf",
+      "score": 0.89
+    }
+  ]
+}
+```
+
+Create a response DTO rather than returning `Map<String, String>`. Your [RagService](cci:2://file:///C:/Harsh%20Projects/rag/src/main/java/com/local/rag/service/RagService.java:10:0-62:1) already has access to the retrieved `Document` objects and their metadata.
+
+## 2. Better request and response DTOs
+
+Instead of a GET request with a body, use:
+
+```http
+POST /api/rag/ask
+Content-Type: application/json
+
+{
+  "question": "What does Spring AI provide?"
+}
+```
+
+Return a typed response:
+
+```json
+{
+  "answer": "...",
+  "sources": [],
+  "retrievedChunks": 5
+}
+```
+
+GET bodies are not consistently supported by clients and proxies.
+
+## 3. Similarity threshold
+
+`topK(5)` always returns up to five chunks—even when they are irrelevant. Add a minimum similarity threshold:
+
+```java
+SearchRequest.builder()
+        .query(question)
+        .topK(5)
+        .similarityThreshold(0.7)
+        .build();
+```
+
+Tune the threshold experimentally. This reduces hallucination from unrelated context.
+
+## 4. Document identity and duplicate prevention
+
+At present, repeated ingestion adds duplicate chunks. Add metadata such as:
+
+- **`document_id`:** stable identifier.
+- **`source_file`:** original file name.
+- **`content_hash`:** SHA-256 of the PDF.
+- **`uploaded_at`:** ingestion timestamp.
+
+Before ingestion, check whether the same hash already exists. Also add endpoints to list and delete documents.
+
+## 5. Metadata filtering
+
+Support queries constrained by document, tenant, category, or date:
+
+```java
+SearchRequest.builder()
+        .query(question)
+        .topK(5)
+        .filterExpression("document_id == 'manual-123'")
+        .build();
+```
+
+This becomes essential when multiple PDFs share one index.
+
+## 6. Conversation history
+
+Accept a `conversationId` and retain earlier messages with a Spring AI `ChatMemory`. This supports follow-up questions such as:
+
+1. “What is Spring AI?”
+2. “Which vector stores does it support?”
+
+Be careful: retrieval should usually rewrite the follow-up into a standalone query before vector search.
+
+## 7. Query rewriting
+
+Ask the model to turn conversational or vague input into a search-friendly query before similarity search. For example:
+
+`What about its vector databases?`
+
+becomes:
+
+`Which vector database integrations does Spring AI support?`
+
+## 8. Hybrid search
+
+Combine:
+- **Vector search:** semantic similarity.
+- **Keyword/BM25 search:** exact names, IDs, error messages, and API terms.
+
+This is especially useful for technical PDFs where exact symbols such as `TokenTextSplitter` matter.
+
+## 9. Reranking
+
+Retrieve perhaps 15–20 chunks, then rerank them and send only the best 4–5 to Gemini. This typically improves relevance without increasing final prompt size excessively.
+
+## 10. Chunking improvements
+
+Your current splitter has no overlap in Spring AI 2.0.1. Improvements include:
+
+- **Sentence-aware chunks**
+- **Section-aware chunks**
+- **Custom overlapping splitter**
+- **Heading metadata**
+- **Page-aware citations**
+
+Also inspect the extracted page text before indexing to catch PDF formatting issues.
+
+## 11. Streaming responses
+
+Stream Gemini tokens to the client with Server-Sent Events:
+
+```http
+POST /api/rag/ask/stream
+Accept: text/event-stream
+```
+
+This makes longer answers feel much faster.
+
+## 12. Validation and error handling
+
+Add:
+- **Empty-question validation**
+- **Unsupported file-type rejection**
+- **Maximum upload size**
+- **Empty PDF detection**
+- **Global `@RestControllerAdvice`**
+- **Clear errors for unavailable OpenSearch or Gemini**
+
+Avoid returning raw stack traces to clients.
+
+## 13. Security
+
+Add:
+- **Authentication**
+- **Per-user or per-tenant metadata**
+- **File-size limits**
+- **Malware scanning**
+- **Prompt-injection defenses**
+- **Authorization filters during retrieval**
+
+A document may contain instructions like “ignore the system prompt.” Treat retrieved content as data, not instructions.
+
+## 14. Observability and evaluation
+
+Record:
+- Retrieval latency
+- Gemini latency
+- Retrieved chunk IDs and scores
+- Token usage
+- Empty-result rate
+- User feedback
+- End-to-end answer quality
+
+Create a small evaluation dataset of questions, expected answers, and expected source pages. This is more useful than manually testing random questions.
+
+# Best Next Milestone
+
+Implement these four together:
+
+1. **POST request DTO**
+2. **Typed answer response**
+3. **Source citations**
+4. **Similarity threshold**
+
+That gives you a usable, testable RAG API before adding chat memory or advanced retrieval.
+
+**Status:** basic RAG is implemented; citations and typed API responses are the highest-value next additions.

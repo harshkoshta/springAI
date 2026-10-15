@@ -8,3 +8,39 @@ spring:
         index-name: rag-chunks
         initialize-schema: true
         similarity-function: cosinesimil
+        aws:
+          enabled: false
+
+    google:
+      genai:
+        api-key: ${GOOGLE_API_KEY}
+        embedding:
+          api-key: ${GOOGLE_API_KEY}
+          text:
+            model: gemini-embedding-001
+        chat:
+          model: gemini-3.5-flash-lite
+
+    mcp:
+      client:
+        enabled: true
+        type: SYNC
+
+        # Maven MCP (local STDIO)
+        stdio:
+          connections:
+            maven-deps-server:
+              command: cmd.exe
+              args:
+                - /c
+                - npx
+                - -y
+                - mcp-maven-deps
+
+        # GitHub MCP (remote HTTP)
+        streamable-http:
+          connections:
+            github:
+              url: https://api.githubcopilot.com
+              endpoint: /mcp/
+github_token: ${GITHUB_TOKEN}

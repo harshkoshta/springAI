@@ -1,3 +1,10 @@
 spring:
   application:
     name: rag
+  ai:
+    vectorstore:
+      opensearch:
+        uris: http://localhost:50140
+        index-name: rag-chunks
+        initialize-schema: true
+        similarity-function: cosinesimil

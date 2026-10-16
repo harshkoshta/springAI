@@ -229,3 +229,35 @@ Start with the first two.
 5. Chunking is evaluated, not assumed.
 6. Security enforced at retrieval before multi-user use.
 7. Observability grows incrementally.
+
+---
+
+## 14. Current Status and Next Features
+
+### Completed
+
+- Document reading and chunking
+- Embedding generation and OpenSearch indexing
+- Vector similarity search
+- Gemini LLM answer generation with retrieved context
+
+### Next features — in implementation order
+
+1. **Similarity threshold + TopK tuning**  
+   Filter irrelevant chunks and compare retrieval quality.
+2. **Document metadata + source citations**  
+   Store document ID, filename, page, and chunk index. Return sources with answers.
+3. **Context preservation**  
+   Retrieve neighboring chunks when a relevant result is missing surrounding context.
+4. **Hybrid search**  
+   Combine OpenSearch BM25 keyword search with vector similarity search.
+5. **Reranking**  
+   Retrieve 15–20 candidates and select the most relevant 4–5.
+6. **Conversational RAG**  
+   Support follow-up questions with chat history and query rewriting.
+7. **Web search integration**  
+   Search current external information when local documents are insufficient.
+8. **Tool calling + agent workflows**  
+   Let the model invoke approved tools and execute controlled workflows.
+9. **Evaluation + observability**  
+   Measure retrieval quality, answer faithfulness, latency, and token usage.

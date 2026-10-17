@@ -1,4 +1,6 @@
 package com.local.rag.service;
+import com.local.rag.dto.AnswerDto;
+import com.local.rag.dto.RagResponseDto;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -22,7 +24,7 @@ public class RagService {
         this.chatClient = chatClientBuilder.build();
     }
 
-    public String ask(String question) {
+    public RagResponseDto ask(String question) {
 
         // Step 1: Retrieve relevant chunks from OpenSearch
         List<Document> documents = vectorStore.similaritySearch(
@@ -38,7 +40,7 @@ public class RagService {
                 .collect(Collectors.joining("\n\n---\n\n"));
 
         // Step 3: Send context + question to Gemini
-        return chatClient.prompt()
+        AnswerDto answer =  chatClient.prompt()
                 .system("""
                         You are a question-answering assistant.
 
@@ -58,6 +60,7 @@ public class RagService {
                         %s
                         """.formatted(context, question))
                 .call()
-                .content();
+                .entity(AnswerDto.class);
+        return new RagResponseDto(answer,documents);
     }
 }

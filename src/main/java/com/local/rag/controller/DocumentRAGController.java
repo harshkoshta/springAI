@@ -1,6 +1,7 @@
 package com.local.rag.controller;
 
 
+import com.local.rag.dto.RagResponseDto;
 import com.local.rag.retrival.DocumentRetrievalService;
 import com.local.rag.service.RagService;
 import org.springframework.ai.document.Document;
@@ -23,9 +24,9 @@ public class DocumentRAGController {
     }
 
     @GetMapping("/ask")
-    public Map<String, String> search(@RequestBody String query) {
-        String ask = service.ask(query);
+    public RagResponseDto search(@RequestBody String query) {
+        RagResponseDto ask = service.ask(query);
         System.out.println("Ask : "+ask);
-         return Map.of("answer", ask);
+         return ask;
     }
 }

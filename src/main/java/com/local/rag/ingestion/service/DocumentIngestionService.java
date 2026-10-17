@@ -1,46 +1,33 @@
 package com.local.rag.ingestion.service;
 
-
+import java.io.IOException;
 import java.util.List;
-
+import java.util.concurrent.CompletableFuture;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
-import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class DocumentIngestionService {
 
     private final VectorStore vectorStore;
+    private final Chunking chunking;
 
-    public DocumentIngestionService(VectorStore vectorStore) {
+    public DocumentIngestionService(VectorStore vectorStore, Chunking chunking) {
         this.vectorStore = vectorStore;
+        this.chunking = chunking;
     }
 
-    public int ingest(Resource pdfResource) {
-
-        // Step 1: Extract PDF text
-        PagePdfDocumentReader reader =
-                new PagePdfDocumentReader(pdfResource);
-
-        List<Document> pages = reader.read();
-
-        // Step 2: Split into chunks
-        TokenTextSplitter splitter = TokenTextSplitter.builder()
-                .withChunkSize(500)
-                .withMinChunkSizeChars(200)
-                .withMinChunkLengthToEmbed(10)
-                .withMaxNumChunks(5000)
-                .withKeepSeparator(true)
-                .build();
-
-        List<Document> chunks = splitter.apply(pages);
-
-        // Step 3: Generate embeddings and index
-        vectorStore.add(chunks);
-
-        return chunks.size();
+    public CompletableFuture<Integer> process(MultipartFile file) throws IOException {
+        return chunking.chunk(file)
+                .thenApply(this::index);
+    }
+    public int index(List<Document> documents) {
+        if (documents == null || documents.isEmpty()) {
+            return 0;
+        }
+        vectorStore.add(documents);
+        return documents.size();
     }
 }

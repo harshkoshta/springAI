@@ -2,8 +2,7 @@ package com.local.rag.controller;
 
 
 import com.local.rag.ingestion.service.DocumentIngestionService;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
+import com.local.rag.ingestion.service.Chunking;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,9 +15,11 @@ import java.util.Map;
 public class DocumentController {
 
     private final DocumentIngestionService service;
+    private final Chunking chunking;
 
-    public DocumentController(DocumentIngestionService service) {
+    public DocumentController(DocumentIngestionService service, Chunking chunking) {
         this.service = service;
+        this.chunking = chunking;
     }
 
     @PostMapping(
@@ -28,30 +29,11 @@ public class DocumentController {
     public Map<String, Object> upload(
             @RequestParam("file") MultipartFile file
     ) throws IOException {
-
-        int chunks = service.ingest(
-                file.getResource()
-        );
-
+        service.process(file);
         return Map.of(
-                "status", "INDEXED",
-                "chunks", chunks
+                "status", "PROCESSING"
         );
     }
 
 
-    @GetMapping(            value = "/upload"    )
-    public Map<String, Object> getupload() throws IOException {
-        System.out.println("Executed Upload");
-        Resource resource =
-                new ClassPathResource("documents/sample.pdf");
-        int chunks = service.ingest(
-                resource
-        );
-
-        return Map.of(
-                "status", "INDEXED",
-                "chunks", chunks
-        );
-    }
 }

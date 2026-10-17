@@ -14,7 +14,7 @@ source = Path(sys.argv[1]).resolve()
 if not source.is_file():
     raise SystemExit(f"PDF does not exist: {source}")
 
-document_id = "contract-001"
+document_id = Path(source).name
 
 # 1. Convert PDF
 converter = DocumentConverter()

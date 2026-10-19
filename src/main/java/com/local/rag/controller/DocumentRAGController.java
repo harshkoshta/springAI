@@ -26,7 +26,6 @@ public class DocumentRAGController {
     @GetMapping("/ask")
     public RagResponseDto search(@RequestBody String query) {
         RagResponseDto ask = service.ask(query);
-        System.out.println("Ask : "+ask);
          return ask;
     }
 }

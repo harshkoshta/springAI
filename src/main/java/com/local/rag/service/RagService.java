@@ -27,12 +27,25 @@ public class RagService {
     public RagResponseDto ask(String question) {
 
         // Step 1: Retrieve relevant chunks from OpenSearch
+//        Get 1 document and extract heading from it
         List<Document> documents = vectorStore.similaritySearch(
                 SearchRequest.builder()
                         .query(question)
-                        .topK(5)
+                        .topK(1)
                         .build()
         );
+        List<String> headings = (List<String>)documents.get(0).getMetadata().get("headings");
+
+        String filterText = headings.isEmpty() ? "" : headings.get(0);
+        // extract all document with same heading metadata
+         documents = vectorStore.similaritySearch(
+                SearchRequest.builder()
+                        .query(question)
+                        .topK(5 )
+                        .filterExpression("headings.keyword == '" + filterText + "'")
+                        .build()
+        );
+
 
         // Step 2: Combine retrieved chunks into context
         String context = documents.stream()

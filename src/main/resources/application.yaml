@@ -6,7 +6,7 @@ spring:
       opensearch:
         uris: http://localhost:50140
         index-name: rag-chunks
-        initialize-schema: true
+        initialize-schema: false
         similarity-function: cosinesimil
         aws:
           enabled: false

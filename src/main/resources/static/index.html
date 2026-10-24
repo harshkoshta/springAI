@@ -116,6 +116,95 @@
     }
     .conv-item:hover .conv-delete { display: block; }
 
+    /* ── upload button in sidebar ── */
+    #btn-upload-doc {
+      display: flex; align-items: center; gap: 8px;
+      background: none;
+      color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+      width: 100%;
+    }
+    #btn-upload-doc:hover { border-color: var(--accent); color: var(--text-primary); }
+
+    /* ── modal overlay ── */
+    #upload-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    #upload-modal.open { display: flex; }
+    .modal-box {
+      background: #1a1a1a; border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 28px 24px;
+      width: 440px; max-width: 95vw;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; color: var(--text-muted);
+      font-size: 20px; cursor: pointer; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+
+    /* drop zone */
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    #drop-zone:hover, #drop-zone.dragover {
+      border-color: var(--accent); background: #0e1d3a;
+    }
+    #drop-zone .dz-icon  { font-size: 36px; margin-bottom: 8px; }
+    #drop-zone .dz-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    #drop-zone .dz-sub   { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    #file-input { display: none; }
+
+    /* file list */
+    #file-list {
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 160px; overflow-y: auto;
+    }
+    .file-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-input); border-radius: 8px;
+      padding: 8px 12px; font-size: 13px;
+    }
+    .file-row .f-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-row .f-size { color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
+    .file-row .f-status { font-size: 13px; flex-shrink: 0; }
+
+    /* upload button inside modal */
+    #btn-do-upload {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 10px 18px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    #btn-do-upload:hover  { background: var(--accent-hover); }
+    #btn-do-upload:disabled { opacity: .4; cursor: default; }
+
+    .upload-note {
+      font-size: 11px; color: var(--text-tiny);
+      text-align: center;
+    }
+    .upload-note code {
+      color: #7aabff; background: #1a2744;
+      padding: 1px 6px; border-radius: 4px;
+    }
+
     .sidebar-footer {
       border-top: 1px solid var(--border);
       padding-top: 10px;
@@ -303,12 +392,41 @@
   </div>
 
   <button id="btn-new-chat">＋ &nbsp;New conversation</button>
+  <button id="btn-upload-doc">📄 &nbsp;Add document</button>
 
   <div class="section-label">Conversations</div>
   <div id="conversation-list"></div>
 
   <div class="sidebar-footer">Spring AI · Gemini · OpenSearch</div>
 </aside>
+
+<!-- ── UPLOAD MODAL ── -->
+<div id="upload-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">📄 Upload Documents</span>
+      <button class="modal-close" id="btn-modal-close">✕</button>
+    </div>
+
+    <div id="drop-zone">
+      <div class="dz-icon">☁️</div>
+      <div class="dz-title">Drop PDF files here</div>
+      <div class="dz-sub">or click to browse</div>
+      <input type="file" id="file-input" accept=".pdf" multiple />
+    </div>
+
+    <div id="file-list"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
+      <span id="upload-global-status" style="font-size:12px;color:var(--text-muted);flex:1"></span>
+      <button id="btn-do-upload" disabled>Upload &amp; Ingest</button>
+    </div>
+
+    <div class="upload-note">
+      Hits &nbsp;<code>POST /api/documents/upload</code>&nbsp; · field name: <code>file</code> · returns <code>{"status":"PROCESSING"}</code>
+    </div>
+  </div>
+</div>
 
 <!-- ── MAIN ── -->
 <main id="main">
@@ -594,6 +712,91 @@
     textarea.dispatchEvent(new Event('input'));
     send();
   }
+
+  /* ── upload modal ── */
+  const uploadModal  = $('upload-modal');
+  const dropZone     = $('drop-zone');
+  const fileInput    = $('file-input');
+  const fileList     = $('file-list');
+  const btnDoUpload  = $('btn-do-upload');
+  const uploadStatus = $('upload-global-status');
+
+  let pendingFiles = [];
+
+  $('btn-upload-doc').addEventListener('click',   () => openUploadModal());
+  $('btn-modal-close').addEventListener('click',  () => closeUploadModal());
+  uploadModal.addEventListener('click', e => { if (e.target === uploadModal) closeUploadModal(); });
+
+  function openUploadModal() {
+    pendingFiles = [];
+    fileList.innerHTML = '';
+    btnDoUpload.disabled = true;
+    uploadStatus.textContent = '';
+    uploadModal.classList.add('open');
+  }
+  function closeUploadModal() { uploadModal.classList.remove('open'); }
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    addFiles([...e.dataTransfer.files]);
+  });
+  fileInput.addEventListener('change', () => { addFiles([...fileInput.files]); fileInput.value = ''; });
+
+  function fmtSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+    return (b/(1024*1024)).toFixed(1) + ' MB';
+  }
+
+  function addFiles(files) {
+    files.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf')).forEach(f => {
+      if (pendingFiles.find(p => p.name === f.name)) return;
+      pendingFiles.push(f);
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      row.id = 'frow-' + f.name.replace(/\W/g,'_');
+      row.innerHTML = `
+        <span class="f-status">📄</span>
+        <span class="f-name" title="${esc(f.name)}">${esc(f.name)}</span>
+        <span class="f-size">${fmtSize(f.size)}</span>`;
+      fileList.appendChild(row);
+    });
+    btnDoUpload.disabled = pendingFiles.length === 0;
+  }
+
+  btnDoUpload.addEventListener('click', async () => {
+    if (!pendingFiles.length) return;
+    btnDoUpload.disabled = true;
+    uploadStatus.textContent = `Uploading 0 / ${pendingFiles.length}…`;
+
+    let done = 0;
+    for (const file of pendingFiles) {
+      const rowId  = 'frow-' + file.name.replace(/\W/g,'_');
+      const row    = $(rowId);
+      const status = row ? row.querySelector('.f-status') : null;
+      if (status) status.textContent = '⏳';
+
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const res  = await fetch('/api/documents/upload', { method: 'POST', body: form });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (status) status.textContent = '✅';
+      } catch (err) {
+        if (status) status.textContent = '❌';
+        console.error('Upload failed for', file.name, err);
+      }
+      done++;
+      uploadStatus.textContent = `Uploading ${done} / ${pendingFiles.length}…`;
+    }
+
+    uploadStatus.textContent = `Done — ${done} file(s) sent for ingestion.`;
+    pendingFiles = [];
+    btnDoUpload.disabled = true;
+  });
 
   /* ── init ── */
   renderSidebar();

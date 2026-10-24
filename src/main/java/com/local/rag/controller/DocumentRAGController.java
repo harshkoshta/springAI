@@ -4,7 +4,6 @@ package com.local.rag.controller;
 import com.local.rag.dto.ChatRequestDto;
 import com.local.rag.dto.ChatResponseDto;
 import com.local.rag.dto.RagResponseDto;
-import com.local.rag.retrival.DocumentRetrievalService;
 import com.local.rag.service.HybridDocumentRetriever;
 import com.local.rag.service.RagService;
 import org.springframework.ai.document.Document;

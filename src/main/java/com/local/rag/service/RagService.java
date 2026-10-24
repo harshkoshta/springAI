@@ -109,7 +109,7 @@ public class RagService {
                         .chatClientBuilder(chatClientBuilder)
                         .build())
                 .queryAugmenter(ContextualQueryAugmenter.builder()
-                        .allowEmptyContext(false)
+                        .allowEmptyContext(true)
                         .promptTemplate(new PromptTemplate("""
                                 Use the following document context and the conversation
                                 history to answer the question.

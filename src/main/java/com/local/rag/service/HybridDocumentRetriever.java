@@ -26,19 +26,23 @@ public class HybridDocumentRetriever implements DocumentRetriever {
 
     private static final Logger log = LoggerFactory.getLogger(HybridDocumentRetriever.class);
 
-    private static final int TOP_K = 50;
+    private static final int TOP_K = 20;
     private static final int CANDIDATE_K = 10;
     private static final int RRF_K = 60;
+    private static final int FINAL_K = 5;
 
     private final VectorStore vectorStore;
     private final OpenSearchClient openSearchClient;
+    private final LlmReranker llmReranker;
 
     public HybridDocumentRetriever(
             VectorStore vectorStore,
-            OpenSearchClient openSearchClient
+            OpenSearchClient openSearchClient,
+            LlmReranker llmReranker
     ) {
         this.vectorStore = vectorStore;
         this.openSearchClient = openSearchClient;
+        this.llmReranker = llmReranker;
     }
 
     @Override
@@ -70,9 +74,9 @@ public class HybridDocumentRetriever implements DocumentRetriever {
         addRrfScores(keywordDocs, scores, documents);
 
 
-        // 4. Return highest-ranked documents
-        List<Document> result = scores.entrySet().stream()
-                .sorted(Map.Entry.<String, Double>comparingByValue())
+        // 4. Rank fused results by RRF score (highest first)
+        List<Document> rrfCandidates = scores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
                 .limit(TOP_K)
                 .map(entry -> {
                     Document original = documents.get(entry.getKey());
@@ -84,7 +88,9 @@ public class HybridDocumentRetriever implements DocumentRetriever {
                             .build();
                 })
                 .collect(Collectors.toList());
-        return result;
+
+        // 5. LLM reranking: grade actual content, keep the most relevant
+        return llmReranker.rerank(searchText, rrfCandidates, FINAL_K);
     }
 
     private List<Document> keywordSearch(String searchText) {

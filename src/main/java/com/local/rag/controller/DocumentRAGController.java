@@ -1,6 +1,8 @@
 package com.local.rag.controller;
 
 
+import com.local.rag.dto.ChatRequestDto;
+import com.local.rag.dto.ChatResponseDto;
 import com.local.rag.dto.RagResponseDto;
 import com.local.rag.retrival.DocumentRetrievalService;
 import com.local.rag.service.HybridDocumentRetriever;
@@ -8,6 +10,7 @@ import com.local.rag.service.RagService;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +36,11 @@ public class DocumentRAGController {
         System.out.println("Query : "+query.get("query"));
         RagResponseDto ask = service.ask(query.get("query"));
          return ask;
+    }
+
+    @PostMapping("/chat")
+    public ChatResponseDto chat(@RequestBody ChatRequestDto request) {
+        return service.chat(request.conversationId(), request.question());
     }
 
     @GetMapping("/hybrid")

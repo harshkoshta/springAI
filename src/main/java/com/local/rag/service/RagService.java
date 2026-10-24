@@ -1,8 +1,13 @@
 package com.local.rag.service;
 import com.local.rag.dto.AnswerDto;
+import com.local.rag.dto.ChatResponseDto;
 import com.local.rag.dto.RagResponseDto;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.document.Document;
@@ -28,6 +33,7 @@ public class RagService {
     private final VectorStore vectorStore;
     private final ChatClient chatClient;
     private final ChatClient.Builder chatClientBuilder;
+    private final ChatMemory chatMemory;
 
     public RagService(
             VectorStore vectorStore,
@@ -36,6 +42,10 @@ public class RagService {
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.build();
         this.chatClientBuilder = chatClientBuilder;
+        this.chatMemory = MessageWindowChatMemory.builder()
+                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .maxMessages(20)
+                .build();
     }
 
     public RagResponseDto ask(String question) {
@@ -76,6 +86,39 @@ public class RagService {
 
                 .entity(AnswerDto.class);
         return new RagResponseDto(answer,null);
+    }
+
+    /**
+     * Conversational RAG: remembers prior turns per conversationId and
+     * compresses follow-up questions into standalone queries before retrieval.
+     */
+    public ChatResponseDto chat(String conversationId, String question) {
+
+        Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+
+        Advisor retrievalAugmentationAdvisor = RetrievalAugmentationAdvisor.builder()
+                .documentRetriever(VectorStoreDocumentRetriever.builder()
+                        .similarityThreshold(0.20)
+                        .vectorStore(vectorStore)
+                        .build())
+                // Rewrites "what about X?" follow-ups into standalone queries
+                // using the conversation history before retrieval.
+                .queryTransformers(CompressionQueryTransformer.builder()
+                        .chatClientBuilder(chatClientBuilder)
+                        .build())
+                .queryAugmenter(ContextualQueryAugmenter.builder()
+                        .allowEmptyContext(false)
+                        .build())
+                .build();
+
+        String answer = chatClient.prompt()
+                .user(question)
+                .advisors(memoryAdvisor, retrievalAugmentationAdvisor)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
+                .call()
+                .content();
+
+        return new ChatResponseDto(conversationId, answer);
     }
 
 

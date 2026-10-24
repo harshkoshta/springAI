@@ -15,9 +15,12 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,7 +93,106 @@ public class HybridDocumentRetriever implements DocumentRetriever {
                 .collect(Collectors.toList());
 
         // 5. LLM reranking: grade actual content, keep the most relevant
-        return llmReranker.rerank(searchText, rrfCandidates, FINAL_K);
+        List<Document> topHits = llmReranker.rerank(searchText, rrfCandidates, FINAL_K);
+
+        // 6. Context preservation: pull in adjacent chunks (c-1, c+1) from the
+        //    same page so answers aren't cut mid-thought.
+        return expandWithNeighbors(topHits);
+    }
+
+    /**
+     * Fetches neighboring chunks for each hit. Chunk IDs follow the pattern
+     * {@code {documentId}-p{pageId}-c{chunkIndex}} (or 'punknown' when the page
+     * is unknown), so neighbor IDs are predictable and can be fetched with a
+     * single ids query.
+     */
+    private List<Document> expandWithNeighbors(List<Document> hits) {
+        if (hits.isEmpty()) {
+            return hits;
+        }
+
+        List<String> neighborIds = new ArrayList<>();
+        Map<String, String[]> neighborIdsByHit = new HashMap<>();
+
+        for (Document hit : hits) {
+            Object documentId = hit.getMetadata().get("documentId");
+            Object pageId = hit.getMetadata().get("pageId");
+            Object chunkIndex = hit.getMetadata().get("chunkIndex");
+            if (documentId == null || pageId == null || chunkIndex == null) {
+                continue;
+            }
+
+            int idx = toInt(chunkIndex);
+            String base = documentId + "-" + pagePart(toInt(pageId)) + "-c";
+            String prev = idx > 0 ? base + (idx - 1) : null;
+            String next = base + (idx + 1);
+
+            neighborIdsByHit.put(hit.getId(), new String[]{prev, next});
+            if (prev != null) {
+                neighborIds.add(prev);
+            }
+            neighborIds.add(next);
+        }
+
+        if (neighborIds.isEmpty()) {
+            return hits;
+        }
+
+        Map<String, Document> neighbors = fetchChunksByIds(neighborIds);
+
+        // Emit [prev, hit, next] per hit, deduplicated, hit order preserved.
+        Set<String> emitted = new LinkedHashSet<>();
+        List<Document> expanded = new ArrayList<>();
+        for (Document hit : hits) {
+            String[] ids = neighborIdsByHit.getOrDefault(hit.getId(), new String[2]);
+            addIfPresent(expanded, emitted, neighbors.get(ids[0]), hit.getScore());
+            if (emitted.add(hit.getId())) {
+                expanded.add(hit);
+            }
+            addIfPresent(expanded, emitted, neighbors.get(ids[1]), hit.getScore());
+        }
+        return expanded;
+    }
+
+    private void addIfPresent(List<Document> out, Set<String> emitted,
+                              Document neighbor, Double score) {
+        if (neighbor == null || !emitted.add(neighbor.getId())) {
+            return;
+        }
+        out.add(Document.builder()
+                .id(neighbor.getId())
+                .text(neighbor.getText())
+                .metadata(neighbor.getMetadata())
+                .score(score)   // inherit the parent hit's relevance score
+                .build());
+    }
+
+    private Map<String, Document> fetchChunksByIds(List<String> ids) {
+        try {
+            var osRequest = org.opensearch.client.opensearch.core.SearchRequest.of(s -> s
+                    .index("rag-chunks")
+                    .size(ids.size())
+                    .query(q -> q.ids(i -> i.values(ids))));
+
+            var response = openSearchClient.search(osRequest, Map.class);
+
+            Map<String, Document> result = new HashMap<>();
+            for (Document doc : mapKeywordSearchResults(response)) {
+                result.put(doc.getId(), doc);
+            }
+            return result;
+        } catch (IOException e) {
+            log.warn("Neighbor expansion failed, returning hits unexpanded: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    private String pagePart(int pageId) {
+        return pageId < 0 ? "punknown" : "p" + pageId;
+    }
+
+    private int toInt(Object value) {
+        return value instanceof Number n ? n.intValue() : Integer.parseInt(value.toString());
     }
 
     private List<Document> keywordSearch(String searchText) {

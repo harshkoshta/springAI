@@ -10,6 +10,7 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.Query;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
@@ -20,6 +21,7 @@ import org.springframework.ai.rag.preretrieval.query.transformation.QueryTransfo
 import org.springframework.ai.rag.preretrieval.query.transformation.RewriteQueryTransformer;
 import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
@@ -108,6 +110,23 @@ public class RagService {
                         .build())
                 .queryAugmenter(ContextualQueryAugmenter.builder()
                         .allowEmptyContext(false)
+                        .promptTemplate(new PromptTemplate("""
+                                Use the following document context and the conversation
+                                history to answer the question.
+
+                                You may use the conversation history for questions about
+                                the conversation itself (e.g. "what did I ask before").
+
+                                If neither the context nor the history contains the
+                                answer, say "I don't know based on the provided documents."
+                                Do not invent information.
+
+                                Context:
+                                {context}
+
+                                Question:
+                                {query}
+                                """))
                         .build())
                 .build();
 

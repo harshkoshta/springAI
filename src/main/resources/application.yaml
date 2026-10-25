@@ -1,12 +1,16 @@
 spring:
   application:
     name: rag
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   ai:
     vectorstore:
       opensearch:
         uris: http://localhost:50140
         index-name: rag-chunks
-        initialize-schema: false
+        initialize-schema: true
         similarity-function: cosinesimil
         aws:
           enabled: false

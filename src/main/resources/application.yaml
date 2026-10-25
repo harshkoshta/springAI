@@ -24,6 +24,9 @@ spring:
             model: gemini-embedding-001
         chat:
           model: gemini-3.5-flash-lite
+          observations:
+            log-prompt: true
+            log-completion: true
 
     mcp:
       client:
@@ -48,3 +51,18 @@ spring:
               url: https://api.githubcopilot.com
               endpoint: /mcp/
 github_token: ${GITHUB_TOKEN}
+
+# Observability: export GenAI + HTTP traces to LangSmith via OTLP
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${LANGSMITH_OTLP_ENDPOINT:https://api.smith.langchain.com/otel}
+      headers:
+        x-api-key: ${LANGSMITH_API_KEY:lsv2_tr_18efe54a7522412b9e844e6a9112fd36_c44ab911dc}
+        Langsmith-Project: ${LANGSMITH_PROJECT:springAI-rag}
+  observations:
+    annotations:
+      enabled: true

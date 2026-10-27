@@ -54,6 +54,10 @@ github_token: ${GITHUB_TOKEN}
 
 # Observability: export GenAI + HTTP traces to LangSmith via OTLP
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
   tracing:
     sampling:
       probability: 1.0

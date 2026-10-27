@@ -2,6 +2,11 @@ package com.local.rag.service;
 import com.local.rag.dto.AnswerDto;
 import com.local.rag.dto.ChatResponseDto;
 import com.local.rag.dto.RagResponseDto;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.api.Advisor;
@@ -20,18 +25,25 @@ import org.springframework.stereotype.Service;
 @Service
 public class RagService {
 
+    private static final Logger log = LoggerFactory.getLogger(RagService.class);
+
     private final VectorStore vectorStore;
     private final ChatClient chatClient;
     private final ChatClient.Builder chatClientBuilder;
     private final ChatMemory chatMemory;
+    private final Counter llmCallCounter;
 
     public RagService(
             VectorStore vectorStore,
-            ChatClient.Builder chatClientBuilder
+            ChatClient.Builder chatClientBuilder,
+            MeterRegistry meterRegistry
     ) {
         this.vectorStore = vectorStore;
         this.chatClient = chatClientBuilder.build();
         this.chatClientBuilder = chatClientBuilder;
+        this.llmCallCounter = Counter.builder("rag.llm.calls")
+                .description("Total LLM invocations from chat()")
+                .register(meterRegistry);
         this.chatMemory = MessageWindowChatMemory.builder()
                 .chatMemoryRepository(new InMemoryChatMemoryRepository())
                 .maxMessages(20)
@@ -118,13 +130,26 @@ public class RagService {
                         .build())
                 .build();
 
-        String answer = chatClient.prompt()
+        llmCallCounter.increment();
+
+        ChatResponse response = chatClient.prompt()
                 .user(question)
                 .advisors(memoryAdvisor, retrievalAugmentationAdvisor)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .call()
-                .content();
+                .chatResponse();
 
+        if (response != null && response.getMetadata() != null
+                && response.getMetadata().getUsage() != null) {
+            var usage = response.getMetadata().getUsage();
+            log.info("LLM call — conv={} promptTokens={} completionTokens={} totalTokens={}",
+                    conversationId,
+                    usage.getPromptTokens(),
+                    usage.getCompletionTokens(),
+                    usage.getTotalTokens());
+        }
+
+        String answer = response != null ? response.getResult().getOutput().getText() : null;
         return new ChatResponseDto(conversationId, answer);
     }
 

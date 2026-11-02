@@ -2,6 +2,7 @@
   {
     "id": "rag-definition",
     "question": "What is Retrieval-Augmented Generation (RAG)?",
+    "referenceAnswer": "RAG is a technique that enhances language model responses by first retrieving relevant documents from an external knowledge base and then using those documents as context when generating the answer.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["retrieval", "generation"],
     "outOfScope": false
@@ -9,6 +10,7 @@
   {
     "id": "rag-why-chunk",
     "question": "Why do we chunk PDF text before indexing?",
+    "referenceAnswer": "Documents are chunked into smaller pieces before indexing because embedding models have token limits and smaller, focused chunks produce more precise similarity scores during retrieval.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["chunk"],
     "outOfScope": false
@@ -16,6 +18,7 @@
   {
     "id": "rag-chunking-strategies",
     "question": "What chunking strategies are described for splitting documents?",
+    "referenceAnswer": "Common chunking strategies include fixed-size chunking with overlap, sentence-based splitting, and recursive character splitting. Overlap between chunks ensures context is not lost at boundaries.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["fixed-size", "overlap"],
     "outOfScope": false
@@ -23,6 +26,7 @@
   {
     "id": "rag-hybrid-search",
     "question": "How does OpenSearch combine vector and keyword search?",
+    "referenceAnswer": "OpenSearch supports hybrid search by combining dense vector similarity (ANN/KNN) with BM25 keyword search scores, often fused using reciprocal rank fusion or a weighted combination.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["bm25", "vector"],
     "outOfScope": false
@@ -30,6 +34,7 @@
   {
     "id": "rag-embedding-dimensions",
     "question": "Why must embedding dimensions match the index mapping?",
+    "referenceAnswer": "The embedding dimension in the index mapping must match the output dimension of the embedding model because OpenSearch stores vectors as fixed-length arrays; a mismatch causes indexing or query errors.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["dimension"],
     "outOfScope": false
@@ -37,6 +42,7 @@
   {
     "id": "rag-vectorstore-add",
     "question": "What does VectorStore.add do in Spring AI?",
+    "referenceAnswer": "VectorStore.add accepts a list of Document objects, embeds each document's content using the configured embedding model, and stores the resulting vectors along with metadata in the underlying vector store such as OpenSearch.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["embed", "index"],
     "outOfScope": false
@@ -44,6 +50,7 @@
   {
     "id": "rag-metadata-fields",
     "question": "What metadata fields should be stored with each chunk?",
+    "referenceAnswer": "Each chunk should store metadata fields such as document_id, file name, page_number, chunk index, and section headings to support filtering, citation, and result ranking during retrieval.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["document_id", "page_number"],
     "outOfScope": false
@@ -51,6 +58,7 @@
   {
     "id": "rag-evaluation-recall",
     "question": "How is retrieval quality measured?",
+    "referenceAnswer": "Retrieval quality is commonly measured using recall at K, which checks what fraction of the relevant documents appear in the top-K retrieved results, and precision at K.",
     "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
     "expectedKeywords": ["recall"],
     "outOfScope": false
@@ -58,6 +66,7 @@
   {
     "id": "springboot-use-cases",
     "question": "In which domains is Spring Boot commonly used?",
+    "referenceAnswer": "Spring Boot is commonly used to build microservices, REST APIs, enterprise web applications, batch processing systems, and cloud-native applications.",
     "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
     "expectedKeywords": ["microservices"],
     "outOfScope": false
@@ -65,6 +74,7 @@
   {
     "id": "springboot-languages",
     "question": "Which JVM languages does Spring Boot support?",
+    "referenceAnswer": "Spring Boot supports Java, Kotlin, and Groovy as primary JVM languages for building applications.",
     "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
     "expectedKeywords": ["java", "kotlin"],
     "outOfScope": false
@@ -72,6 +82,7 @@
   {
     "id": "springboot-restcontroller",
     "question": "What is @RestController used for in Spring Boot?",
+    "referenceAnswer": "@RestController is a convenience annotation combining @Controller and @ResponseBody. It marks a class as a REST endpoint where every method returns JSON or other response body content directly instead of a view name.",
     "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
     "expectedKeywords": ["rest", "json"],
     "outOfScope": false
@@ -79,6 +90,7 @@
   {
     "id": "springboot-autowired",
     "question": "What does the @Autowired annotation do and where can it be applied?",
+    "referenceAnswer": "@Autowired tells Spring to inject a matching bean automatically. It can be applied to constructors, setter methods, and fields, with constructor injection being the recommended approach.",
     "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
     "expectedKeywords": ["inject", "constructor"],
     "outOfScope": false
@@ -86,6 +98,7 @@
   {
     "id": "springboot-qualifier",
     "question": "When is @Qualifier used in Spring?",
+    "referenceAnswer": "@Qualifier is used when multiple beans of the same type exist in the context. It disambiguates which specific bean should be injected by specifying the bean name alongside @Autowired.",
     "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
     "expectedKeywords": ["bean"],
     "outOfScope": false
@@ -93,6 +106,7 @@
   {
     "id": "springboot-dependency-injection",
     "question": "Why use dependency injection in Spring?",
+    "referenceAnswer": "Dependency injection promotes loose coupling between components by externalising object creation to the Spring container, making classes easier to test, maintain, and replace.",
     "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
     "expectedKeywords": ["loose coupling"],
     "outOfScope": false
@@ -100,6 +114,7 @@
   {
     "id": "out-of-scope-weather",
     "question": "What was the weather in Mumbai yesterday?",
+    "referenceAnswer": null,
     "expectedSources": [],
     "expectedKeywords": [],
     "outOfScope": true
@@ -107,6 +122,7 @@
   {
     "id": "out-of-scope-fifa",
     "question": "Who won the 2022 FIFA World Cup final?",
+    "referenceAnswer": null,
     "expectedSources": [],
     "expectedKeywords": [],
     "outOfScope": true

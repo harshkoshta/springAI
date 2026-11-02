@@ -1,0 +1,20 @@
+spring:
+  ai:
+    vectorstore:
+      opensearch:
+        uris: http://localhost:50140
+        index-name: rag-chunks
+    mcp:
+      client:
+        enabled: false
+    google:
+      genai:
+        api-key: ${GOOGLE_API_KEY}
+        embedding:
+          api-key: ${GOOGLE_API_KEY}
+        chat:
+          model: gemini-3.5-flash-lite
+management:
+  tracing:
+    sampling:
+      probability: 0.0

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "rag-definition",
+    "question": "What is Retrieval-Augmented Generation (RAG)?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["retrieval", "generation"],
+    "outOfScope": false
+  },
+  {
+    "id": "rag-why-chunk",
+    "question": "Why do we chunk PDF text before indexing?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["chunk"],
+    "outOfScope": false
+  },
+  {
+    "id": "rag-chunking-strategies",
+    "question": "What chunking strategies are described for splitting documents?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["fixed-size", "overlap"],
+    "outOfScope": false
+  },
+  {
+    "id": "rag-hybrid-search",
+    "question": "How does OpenSearch combine vector and keyword search?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["bm25", "vector"],
+    "outOfScope": false
+  },
+  {
+    "id": "rag-embedding-dimensions",
+    "question": "Why must embedding dimensions match the index mapping?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["dimension"],
+    "outOfScope": false
+  },
+  {
+    "id": "rag-vectorstore-add",
+    "question": "What does VectorStore.add do in Spring AI?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["embed", "index"],
+    "outOfScope": false
+  },
+  {
+    "id": "rag-metadata-fields",
+    "question": "What metadata fields should be stored with each chunk?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["document_id", "page_number"],
+    "outOfScope": false
+  },
+  {
+    "id": "rag-evaluation-recall",
+    "question": "How is retrieval quality measured?",
+    "expectedSources": ["3069a306-b5cb-47f6-af7e-a20cb3395cb2.pdf"],
+    "expectedKeywords": ["recall"],
+    "outOfScope": false
+  },
+  {
+    "id": "springboot-use-cases",
+    "question": "In which domains is Spring Boot commonly used?",
+    "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
+    "expectedKeywords": ["microservices"],
+    "outOfScope": false
+  },
+  {
+    "id": "springboot-languages",
+    "question": "Which JVM languages does Spring Boot support?",
+    "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
+    "expectedKeywords": ["java", "kotlin"],
+    "outOfScope": false
+  },
+  {
+    "id": "springboot-restcontroller",
+    "question": "What is @RestController used for in Spring Boot?",
+    "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
+    "expectedKeywords": ["rest", "json"],
+    "outOfScope": false
+  },
+  {
+    "id": "springboot-autowired",
+    "question": "What does the @Autowired annotation do and where can it be applied?",
+    "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
+    "expectedKeywords": ["inject", "constructor"],
+    "outOfScope": false
+  },
+  {
+    "id": "springboot-qualifier",
+    "question": "When is @Qualifier used in Spring?",
+    "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
+    "expectedKeywords": ["bean"],
+    "outOfScope": false
+  },
+  {
+    "id": "springboot-dependency-injection",
+    "question": "Why use dependency injection in Spring?",
+    "expectedSources": ["acc3dcc6-ead1-49ea-86b7-e30b7865ab17.pdf"],
+    "expectedKeywords": ["loose coupling"],
+    "outOfScope": false
+  },
+  {
+    "id": "out-of-scope-weather",
+    "question": "What was the weather in Mumbai yesterday?",
+    "expectedSources": [],
+    "expectedKeywords": [],
+    "outOfScope": true
+  },
+  {
+    "id": "out-of-scope-fifa",
+    "question": "Who won the 2022 FIFA World Cup final?",
+    "expectedSources": [],
+    "expectedKeywords": [],
+    "outOfScope": true
+  }
+]

@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local secrets (never commit) ###
+.env
+.env.test
+.env.default
+src/test/resources/application-test.yaml
